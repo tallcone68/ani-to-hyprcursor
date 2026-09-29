@@ -1,366 +1,208 @@
-# ANI to Hyprcursor
+# ANI to Hyprcursor Converter
 
-Converter generik untuk mengubah cursor Windows **`.ani` (Animated Cursor)**
-menjadi **native Hyprcursor** untuk Hyprland.
+> Indonesian documentation: see [README.id.md](README.id.md).
 
-Tujuannya sederhana: satu script bisa dipakai ulang untuk banyak cursor pack,
-bukan hanya Furina.
+Convert animated Windows cursor `.ani` files into native **Hyprcursor themes** for Hyprland.
 
-## Fitur
+The converter is designed to be generic: it is not hardcoded for Furina, Skirk, or any other specific cursor pack.
 
-- Semua file `.ani` dalam satu folder diproses otomatis.
-- Animasi dan timing dari ANI dipertahankan.
-- Ukuran bawaan: **12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64 px**.
-- Hyprcursor melakukan scaling untuk ukuran yang tidak tersedia. Hyprcursor mendukung
-  `resize_algorithm = bilinear`, `nearest`, atau `none`. [Dokumentasi Hyprcursor](https://github.com/hyprwm/hyprcursor/blob/main/docs/MAKING_THEMES.md)
-- Nama cursor umum seperti normal, hand, text, move, horz, vert, dgn1, dan dgn2
-  dikenali otomatis.
-- Alias resize Hyprland seperti `left_side`, `right_side`, `top_side`,
-  `bottom_side`, dan corner resize dibuat melalui `define_override`.
-- Theme baru dibangun di direktori sementara terlebih dahulu. Theme aktif baru
-  diganti jika seluruh proses berhasil.
-- Jika theme dengan nama yang sama sudah ada, script membuat backup:
-  `THEME backup-before-hyprcursor`.
+## Features
 
-## Dependensi Arch Linux
+- Converts `.ani` cursor files to native Hyprcursor format.
+- Preserves cursor animation and frame timing.
+- Automatically maps common cursor names to standard Hyprcursor shapes.
+- Handles duplicate/colliding cursor names automatically.
+- Generates multiple cursor sizes from **12 px through 64 px**.
+- Creates resize-related aliases such as `left_side`, `right_side`, `top_side`, and corner shapes.
+- Creates a theme that can be loaded with `hyprctl setcursor`.
+- Creates a backup when replacing an existing generated theme.
+
+## Requirements
+
+Arch Linux packages:
 
 ```bash
 sudo pacman -S python-pillow hyprcursor
 ```
 
-`hyprcursor-util` adalah utilitas resmi untuk membuat/compile theme Hyprcursor,
-dan `xcur2png` merupakan runtime dependency dari utilitas tersebut. [README hyprcursor-util](https://github.com/hyprwm/hyprcursor/blob/main/hyprcursor-util/README.md)
+Python 3 is required.
 
-Jika `hyprcursor-util` belum tersedia setelah instalasi, cek:
+## Installation / Usage
 
-```bash
-command -v hyprcursor-util
-```
-
-## Instalasi script
-
-Simpan:
-
-```text
-ani_to_hyprcursor.py
-README.md
-```
-
-di folder yang sama, misalnya:
-
-```text
-~/Downloads/ani-to-hyprcursor/
-```
-
-Buat executable jika mau:
+Put the converter script somewhere convenient:
 
 ```bash
-chmod +x ani_to_hyprcursor.py
+mkdir -p ~/.local/bin
+cp ani_to_hyprcursor.py ~/.local/bin/
+chmod +x ~/.local/bin/ani_to_hyprcursor.py
 ```
 
-## Convert cursor pack
-
-Misalnya cursor pack ini:
-
-```text
-~/Downloads/MyCursor/
-├── normal.ani
-├── busy.ani
-├── hand.ani
-├── text.ani
-├── horz.ani
-├── vert.ani
-└── ...
-```
-
-Jalankan:
+Go to a folder containing your `.ani` files, or pass the folder as an argument:
 
 ```bash
-python ani_to_hyprcursor.py ~/Downloads/MyCursor
+python3 ~/.local/bin/ani_to_hyprcursor.py "/path/to/Cursor Pack"
 ```
 
-Nama theme secara default mengikuti nama folder:
-
-```text
-MyCursor
-```
-
-Theme akan dipasang ke:
-
-```text
-~/.local/share/icons/MyCursor/
-```
-
-Kemudian aktifkan:
+If no source directory is given, run the script from the cursor-pack directory:
 
 ```bash
-hyprctl setcursor "MyCursor" 32
+python3 ani_to_hyprcursor.py
 ```
 
-Hyprcursor memang mendukung pemasangan theme di `~/.local/share/icons`
-dan pengaturan theme/size melalui `HYPRCURSOR_THEME`, `HYPRCURSOR_SIZE`,
-atau `hyprctl setcursor`. [Hyprland Wiki](https://wiki.hypr.land/hypr-ecosystem/user/hyprcursor/)
-
-## Memberi nama theme sendiri
-
-```bash
-python ani_to_hyprcursor.py ~/Downloads/MyCursor --theme "My Awesome Cursor"
-```
-
-Hasil:
-
-```text
-~/.local/share/icons/My Awesome Cursor/
-```
-
-Aktifkan:
-
-```bash
-hyprctl setcursor "My Awesome Cursor" 32
-```
-
-## Mengubah daftar ukuran
-
-Default:
-
-```text
-12,16,20,24,28,32,36,40,44,48,52,56,60,64
-```
-
-Kalau mau lebih sedikit:
-
-```bash
-python ani_to_hyprcursor.py ~/Downloads/MyCursor \
-  --sizes 16,24,32,48,64
-```
-
-Kalau mau ukuran lebih banyak:
-
-```bash
-python ani_to_hyprcursor.py ~/Downloads/MyCursor \
-  --sizes 12,16,20,24,28,32,36,40,44,48,52,56,60,64
-```
-
-Tidak perlu membuat setiap ukuran secara manual setelah itu; Hyprcursor dapat
-memilih ukuran yang tersedia atau melakukan resize sesuai `resize_algorithm`.
-
-## Jika nama `.ani` aneh
-
-Script melakukan deteksi berdasarkan nama file.
-
-Contoh nama yang langsung dikenali:
-
-```text
-normal.ani
-busy.ani
-hand.ani
-text.ani
-move.ani
-link.ani
-help.ani
-horz.ani
-vert.ani
-dgn1.ani
-dgn2.ani
-precision.ani
-unavailable.ani
-```
-
-Nama seperti:
-
-```text
-Furina normal.ani
-Furina horz.ani
-Furina dgn1.ani
-```
-
-juga dikenali.
-
-Untuk pack lain yang memakai nama berbeda, gunakan `cursor-map.json`.
-
-## cursor-map.json
-
-Buat file `cursor-map.json` di folder `.ani`:
-
-```json
-{
-  "My Arrow.ani": {
-    "name": "left_ptr",
-    "aliases": "arrow default top_left_arrow dnd-none X_cursor"
-  },
-  "My Horizontal Resize.ani": {
-    "name": "ew-resize",
-    "aliases": "ew-resize e-resize w-resize col-resize left_side right_side h_double_arrow sb_h_double_arrow size_hor"
-  },
-  "My Vertical Resize.ani": {
-    "name": "ns-resize",
-    "aliases": "ns-resize n-resize s-resize row-resize top_side bottom_side v_double_arrow sb_v_double_arrow size_ver"
-  }
-}
-```
-
-Nama file harus sama persis dengan nama `.ani`.
-
-Jalankan kembali:
-
-```bash
-python ani_to_hyprcursor.py ~/Downloads/MyCursor
-```
-
-Mapping ini hanya diperlukan untuk nama cursor yang tidak bisa ditebak dengan
-baik oleh deteksi otomatis.
-
-## Ganti cursor kapan saja
-
-Misalnya sudah punya:
-
-```text
-Furina 2.0
-Bibata
-MyCursor
-```
-
-Tidak perlu menjalankan converter lagi.
-
-Cukup:
-
-```bash
-hyprctl setcursor "Bibata" 32
-```
-
-atau:
-
-```bash
-hyprctl setcursor "Furina 2.0" 32
-```
-
-Untuk mengganti ukuran:
-
-```bash
-hyprctl setcursor "Furina 2.0" 48
-```
-
-Untuk penggunaan permanen, set:
-
-```lua
-cursor = {
-    enable_hyprcursor = true,
-},
-
-hl.env("HYPRCURSOR_THEME", "Furina 2.0")
-hl.env("HYPRCURSOR_SIZE", "32")
-```
-
-Jika menggunakan konfigurasi Hyprland biasa:
-
-```ini
-env = HYPRCURSOR_THEME,Furina 2.0
-env = HYPRCURSOR_SIZE,32
-```
-
-## Ganti ke cursor lain tanpa menghapus Furina
-
-Ini aman:
-
-```bash
-hyprctl setcursor "MyCursor" 32
-```
-
-Theme Furina tetap tersimpan.
-
-Untuk kembali:
-
-```bash
-hyprctl setcursor "Furina 2.0" 32
-```
-
-## Jika ingin menghapus theme
-
-Hapus hanya folder theme yang ingin dihapus:
-
-```bash
-rm -rf ~/.local/share/icons/"MyCursor"
-```
-
-Jangan menghapus seluruh:
-
-```text
-~/.local/share/icons
-```
-
-karena folder tersebut dapat berisi theme/icon lain.
-
-## Catatan kompatibilitas aplikasi
-
-Hyprcursor bekerja langsung pada Hyprland dan aplikasi yang mendukung
-server-side cursors. Beberapa aplikasi yang belum mendukung Hyprcursor masih
-dapat menggunakan XCursor sebagai fallback. Hyprland mendokumentasikan GTK
-sebagai salah satu contoh aplikasi yang dapat membutuhkan XCursor/GSettings
-untuk sinkronisasi cursor. [Hyprland Wiki](https://wiki.hypr.land/hypr-ecosystem/user/hyprcursor/)
-
-Jadi converter ini sengaja menghasilkan **Hyprcursor native**, bukan kumpulan
-symlink XCursor.
-
-## Cara paling singkat
-
-```bash
-sudo pacman -S python-pillow hyprcursor
-
-python ani_to_hyprcursor.py ~/Downloads/NamaCursor
-
-hyprctl setcursor "NamaCursor" 32
-```
-
-Selesai.
-
----
-
-### Sumber
-
-- Hyprcursor theme format dan `define_override` / `define_size`:
-  https://github.com/hyprwm/hyprcursor/blob/main/docs/MAKING_THEMES.md
-- `hyprcursor-util`:
-  https://github.com/hyprwm/hyprcursor/blob/main/hyprcursor-util/README.md
-- Hyprland cursor configuration:
-  https://wiki.hypr.land/hypr-ecosystem/user/hyprcursor/
-
-## Uninstalling a converted cursor theme
-
-The converter installs the generated Hyprcursor theme under:
+The generated theme is installed under:
 
 ```text
 ~/.local/share/icons/<Theme Name>/
 ```
 
-To remove a cursor theme, first switch to another theme:
+Then activate it:
+
+```bash
+hyprctl setcursor "Theme Name" 32
+```
+
+Change `32` to any generated size from 12 through 64.
+
+## Changing Cursor Themes
+
+You do not need to reinstall the converter to change themes.
+
+Example:
+
+```bash
+hyprctl setcursor "Furina 2.0" 32
+```
+
+Then switch to another theme:
+
+```bash
+hyprctl setcursor "Skirk Cursor" 48
+```
+
+The theme name must match the installed theme name.
+
+## Hyprland Configuration
+
+For native Hyprcursor support, use:
+
+```lua
+cursor = {
+    enable_hyprcursor = true,
+}
+```
+
+Set the environment variables in your Hyprland Lua configuration:
+
+```lua
+hl.env("HYPRCURSOR_THEME", "Furina 2.0")
+hl.env("HYPRCURSOR_SIZE", "32")
+```
+
+After changing the configuration, restart/reload Hyprland as appropriate.
+
+## Uninstalling a Converted Cursor Theme
+
+First switch to another cursor theme:
 
 ```bash
 hyprctl setcursor "Adwaita" 32
 ```
 
-Then remove the generated theme directory. For example:
+Then remove the generated theme directory.
+
+Example:
 
 ```bash
 rm -rf ~/.local/share/icons/"Skirk Cursor"
 ```
 
-For Furina:
+Or:
 
 ```bash
 rm -rf ~/.local/share/icons/"Furina 2.0"
 ```
 
-Replace the name with the exact theme directory you want to remove.
-
-### Check installed custom themes
-
-Before deleting anything, you can list your local themes:
+List local themes before deleting if you are unsure:
 
 ```bash
 find ~/.local/share/icons -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
 ```
 
-**Important:** only remove directories that you know were generated/installed by this converter. Do not delete system themes under `/usr/share/icons/`.
+Only remove themes you recognize as custom/generated themes. Do **not** remove system themes from `/usr/share/icons/`.
 
-If the theme is currently active, switch to another cursor theme before removing it. After removing a theme, no reboot is normally required.
+A reboot is normally not required after uninstalling a theme.
 
+## Duplicate Cursor Names
+
+Some `.ani` packs contain multiple files that map to the same standard cursor shape.
+
+For example:
+
+```text
+Skirk link.ani
+Skirk normal.ani
+```
+
+may both initially map to an existing standard shape.
+
+The converter automatically keeps the first standard mapping and assigns a unique name to later collisions, for example:
+
+```text
+[INFO] Skirk link.ani: 'pointer' bentrok, using unique name 'skirk-link'
+```
+
+This does not require manual editing of `cursor-map.json` for ordinary collisions.
+
+## Output
+
+The converter reports:
+
+- source directory
+- theme name
+- number of `.ani` files
+- generated sizes
+- conversion progress
+- backup location
+- final success/failure count
+
+If conversion succeeds, activate the generated theme with:
+
+```bash
+hyprctl setcursor "Theme Name" 32
+```
+
+## Troubleshooting
+
+### The cursor does not change immediately
+
+Run:
+
+```bash
+hyprctl setcursor "Theme Name" 32
+```
+
+Make sure the theme name is exact.
+
+### A cursor shape is missing
+
+The converter maps common `.ani` names automatically. Unusual cursor-pack names may need a custom mapping using `cursor-map.json`.
+
+### Hyprland still uses another cursor
+
+Check:
+
+```bash
+hyprctl getoption cursor:enable_hyprcursor
+```
+
+For native Hyprcursor themes, it should report:
+
+```text
+bool: true
+```
+
+Also make sure your `HYPRCURSOR_THEME` and `HYPRCURSOR_SIZE` values are correct.
+
+## Notes
+
+This converter is intended for `.ani` cursor packs and native Hyprcursor on Hyprland. Applications that do not use Hyprcursor may use their own cursor handling or an XCursor fallback.
